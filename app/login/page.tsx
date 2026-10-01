@@ -16,28 +16,60 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(
+    params.get("error") === "enlace"
+      ? "El enlace del correo venció o no es válido. Pide uno nuevo."
+      : null
+  );
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    setInfo(null);
     try {
       const sb = supabaseBrowser();
       if (mode === "signup") {
         const { error } = await sb.auth.signUp({
           email,
           password,
-          options: { data: { full_name: name } },
+          options: {
+            data: { full_name: name },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         });
         if (error) throw error;
+        setInfo("Cuenta creada. Revisa tu correo y confirma la cuenta para entrar.");
       } else {
         const { error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        router.push(next);
+        router.refresh();
       }
-      router.push(next);
-      router.refresh();
     } catch (err: any) {
       setError(err.message ?? "Error de autenticación");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function forgotPassword() {
+    if (!email) {
+      setError("Escribe tu correo primero para enviarte el enlace.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setInfo(null);
+    try {
+      const sb = supabaseBrowser();
+      const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/actualizar-clave`,
+      });
+      if (error) throw error;
+      setInfo("Te enviamos un enlace a tu correo para crear una nueva clave.");
+    } catch (err: any) {
+      setError(err.message ?? "No se pudo enviar el correo de recuperación.");
     } finally {
       setBusy(false);
     }
@@ -85,9 +117,20 @@ function LoginForm() {
             <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} />
           </div>
           {error && <p className="text-sm text-red-600 bg-red-50 rounded-xl p-2">{error}</p>}
+          {info && <p className="text-sm text-emerald-700 bg-emerald-50 rounded-xl p-2">{info}</p>}
           <button className="btn-primary" disabled={busy}>
             {busy ? "Un momento…" : mode === "login" ? "Entrar" : "Crear cuenta"}
           </button>
+          {mode === "login" && (
+            <button
+              type="button"
+              onClick={forgotPassword}
+              disabled={busy}
+              className="text-sm text-emerald-700 font-semibold hover:underline w-full text-center"
+            >
+              ¿Olvidaste tu clave?
+            </button>
+          )}
         </form>
       </div>
 

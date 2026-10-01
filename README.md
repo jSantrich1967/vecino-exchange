@@ -57,12 +57,17 @@ admin (`settings`). Si todo falla: `stale: true` y nulls con etiquetas honestas 
 2. **Correr el SQL**: en el SQL Editor pega todo `supabase/schema.sql` y dale Run
    (ver `supabase/README.md`).
 3. **Variables de entorno**: copia `.env.example` a `.env.local` con tus claves de Supabase.
-4. **Hacerte admin**: regístrate en la app y luego en el SQL Editor:
+4. **URLs de autenticación** (esto es lo que hace funcionar los correos): en Supabase →
+   Authentication → URL configuration:
+   - **Site URL**: tu dominio de producción (ej. `https://tu-app.vercel.app`).
+   - **Redirect URLs**: agrega `https://tu-app.vercel.app/auth/callback` y
+     `https://tu-app.vercel.app/actualizar-clave`.
+5. **Hacerte admin**: regístrate en la app y luego en el SQL Editor:
    ```sql
    update public.profiles set is_admin = true
    where id = (select id from auth.users where email = 'tu-correo@ejemplo.com');
    ```
-5. **Desplegar en Vercel**: importa el repo `jSantrich1967/vecino-exchange`, agrega las 3
+6. **Desplegar en Vercel**: importa el repo `jSantrich1967/vecino-exchange`, agrega las 3
    variables de entorno y deploy. Listo para compartir el link en el grupo de WhatsApp.
 
 ## Desarrollo local
